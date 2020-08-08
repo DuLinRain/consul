@@ -21,8 +21,7 @@ import (
 func setupNodeID(config *config.RuntimeConfig, logger hclog.Logger) (types.NodeID, error) {
 	if config.NodeID != "" {
 		nodeID := types.NodeID(strings.ToLower(string(config.NodeID)))
-		_, err := uuid.ParseUUID(string(config.NodeID))
-		if err != nil {
+		if _, err := uuid.ParseUUID(string(config.NodeID)); err != nil {
 			return "", fmt.Errorf("specified NodeID is invalid: %w", err)
 		}
 		return nodeID, nil
@@ -45,8 +44,7 @@ func setupNodeID(config *config.RuntimeConfig, logger hclog.Logger) (types.NodeI
 		nodeID := strings.TrimSpace(string(rawID))
 		if nodeID != "" {
 			nodeID = strings.ToLower(nodeID)
-			_, err = uuid.ParseUUID(nodeID)
-			if err != nil {
+			if _, err = uuid.ParseUUID(nodeID); err != nil {
 				return "", fmt.Errorf("persisted NodeID is invalid: %w", err)
 			}
 			return types.NodeID(nodeID), nil
