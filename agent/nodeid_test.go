@@ -67,7 +67,7 @@ func TestSetupNodeID(t *testing.T) {
 
 		_, err = setupNodeID(cfg, logger)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "persisted NodeID is invalid")
+		require.Contains(t, err.Error(), fmt.Sprintf("NodeID in %s is invalid", filename))
 	})
 
 	t.Run("valid NodeID in file", func(t *testing.T) {
