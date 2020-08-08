@@ -18,13 +18,14 @@ import (
 
 // setupNodeID will pull the persisted node ID, if any, or create a random one
 // and persist it.
+// TODO: rename to newNodeIDFromConfig
 func setupNodeID(config *config.RuntimeConfig, logger hclog.Logger) (types.NodeID, error) {
 	if config.NodeID != "" {
-		nodeID := types.NodeID(strings.ToLower(string(config.NodeID)))
-		if _, err := uuid.ParseUUID(string(config.NodeID)); err != nil {
+		nodeID := strings.ToLower(string(config.NodeID))
+		if _, err := uuid.ParseUUID(nodeID); err != nil {
 			return "", fmt.Errorf("specified NodeID is invalid: %w", err)
 		}
-		return nodeID, nil
+		return types.NodeID(nodeID), nil
 	}
 
 	// For dev mode we have no filesystem access so just make one.
@@ -42,13 +43,11 @@ func setupNodeID(config *config.RuntimeConfig, logger hclog.Logger) (types.NodeI
 		}
 
 		nodeID := strings.TrimSpace(string(rawID))
-		if nodeID != "" {
-			nodeID = strings.ToLower(nodeID)
-			if _, err = uuid.ParseUUID(nodeID); err != nil {
-				return "", fmt.Errorf("persisted NodeID is invalid: %w", err)
-			}
-			return types.NodeID(nodeID), nil
+		nodeID = strings.ToLower(nodeID)
+		if _, err = uuid.ParseUUID(nodeID); err != nil {
+			return "", fmt.Errorf("NodeID in %s is invalid: %w", filename, err)
 		}
+		return types.NodeID(nodeID), nil
 	}
 
 	id, err := makeNodeID(logger, config.DisableHostNodeID)
@@ -70,9 +69,9 @@ func setupNodeID(config *config.RuntimeConfig, logger hclog.Logger) (types.NodeI
 // high for us if this changes, so we will persist it either way. This will let
 // gopsutil change implementations without affecting in-place upgrades of nodes.
 func makeNodeID(logger hclog.Logger, disableHostNodeID bool) (string, error) {
-	// If they've disabled host-based IDs then just make a random one.
 	if disableHostNodeID {
-		return uuid.GenerateUUID()
+		id, err := uuid.GenerateUUID()
+		return types.NodeID(id), err
 	}
 
 	// Try to get a stable ID associated with the host itself.
@@ -85,6 +84,7 @@ func makeNodeID(logger hclog.Logger, disableHostNodeID bool) (string, error) {
 	// Make sure the host ID parses as a UUID, since we don't have complete
 	// control over this process.
 	id := strings.ToLower(info.HostID)
+	// TODO: why do we care if HostID is a uuid, if we are about to hash it?
 	if _, err := uuid.ParseUUID(id); err != nil {
 		logger.Debug("Unique ID from host isn't formatted as a UUID",
 			"id", id,
